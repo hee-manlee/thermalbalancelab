@@ -580,7 +580,7 @@
     <div class="step" id="step5">5</div>
   </div>
   <div class="status-msg" id="status-msg">
-    <strong>찬물(200mL)</strong>을 드래그하여 열량계에 넣으세요.
+    <strong>찬물(200mL)</strong>을 끌어서 열량계에 넣으세요.
   </div>
   <button class="btn-reset" id="btn-reset">↺ 다시 시작</button>
 </div>
@@ -653,6 +653,79 @@ makeDraggable(sensor1Item,   'sensor1');
 makeDraggable(sensor2Item,   'sensor2');
 makeDraggable(metalCupWrap,  'metal-cup');
 
+// ── 터치 드래그 지원 ──
+let touchGhost = null;
+
+function isTouchOver(el, touch) {
+  const r = el.getBoundingClientRect();
+  return touch.clientX >= r.left && touch.clientX <= r.right &&
+         touch.clientY >= r.top  && touch.clientY <= r.bottom;
+}
+
+function setDropHighlight(on) {
+  if (state.step === 2 && dragging === 'hot-water') {
+    metalCup.classList.toggle('drop-target', on);
+    metalCupWrap.classList.toggle('drop-target', on);
+  } else if (isValidBeakerDrop()) {
+    beakerDrop.classList.toggle('drop-target', on);
+    beakerWrap.classList.toggle('drop-target', on);
+  }
+}
+
+function addTouchDrag(el, id) {
+  el.addEventListener('touchstart', e => {
+    // 이미 사용된 아이템은 무시
+    if (el.draggable === false) return;
+    e.preventDefault();
+    dragging = id;
+
+    const touch = e.touches[0];
+    touchGhost = el.cloneNode(true);
+    touchGhost.style.cssText = `
+      position: fixed;
+      pointer-events: none;
+      opacity: 0.75;
+      z-index: 9999;
+      left: ${touch.clientX}px;
+      top: ${touch.clientY}px;
+      transform: translate(-50%, -50%);
+      transition: none;
+    `;
+    document.body.appendChild(touchGhost);
+    setDropHighlight(true);
+  }, { passive: false });
+
+  el.addEventListener('touchmove', e => {
+    if (!touchGhost) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    touchGhost.style.left = touch.clientX + 'px';
+    touchGhost.style.top  = touch.clientY + 'px';
+  }, { passive: false });
+
+  el.addEventListener('touchend', e => {
+    if (!touchGhost) return;
+    const touch = e.changedTouches[0];
+    touchGhost.remove();
+    touchGhost = null;
+    setDropHighlight(false);
+
+    if (isTouchOver(beakerDrop, touch) || isTouchOver(beakerWrap, touch)) {
+      if (isValidBeakerDrop()) handleBeakerDrop();
+    } else if (isTouchOver(metalCup, touch) || isTouchOver(metalCupWrap, touch)) {
+      handleMetalCupDrop();
+    }
+
+    dragging = null;
+  }, { passive: false });
+}
+
+addTouchDrag(coldWaterItem, 'cold-water');
+addTouchDrag(hotWaterItem,  'hot-water');
+addTouchDrag(sensor1Item,   'sensor1');
+addTouchDrag(sensor2Item,   'sensor2');
+addTouchDrag(metalCupWrap,  'metal-cup');
+
 // 열량계 드롭존
 beakerDrop.addEventListener('dragover', e => {
   if (isValidBeakerDrop()) {
@@ -682,6 +755,10 @@ metalCup.addEventListener('dragleave', () => {
 metalCup.addEventListener('drop', e => {
   e.preventDefault();
   metalCup.classList.remove('drop-target');
+  handleMetalCupDrop();
+});
+
+function handleMetalCupDrop() {
   if (state.step === 2 && dragging === 'hot-water') {
     hotLevel.style.height = '60%';
     hotWaterItem.style.opacity = '0.3';
@@ -689,9 +766,9 @@ metalCup.addEventListener('drop', e => {
     state.hotAdded = true;
     state.step = 3;
     updateSteps(3);
-    setStatus('<strong>금속컵</strong>을 드래그하여 열량계 안에 넣으세요.');
+    setStatus('<strong>금속컵</strong>을 끌어서 열량계 안에 넣으세요.');
   }
-});
+}
 
 function isValidBeakerDrop() {
   if (state.step === 1 && dragging === 'cold-water') return true;
@@ -708,7 +785,7 @@ function handleBeakerDrop() {
     state.coldAdded = true;
     state.step = 2;
     updateSteps(2);
-    setStatus('<strong>뜨거운 물(100mL)</strong>을 드래그하여 금속컵에 넣으세요.');
+    setStatus('<strong>뜨거운 물(100mL)</strong>을 끌어서 금속컵에 넣으세요.');
   } else if (state.step === 3 && dragging === 'metal-cup') {
     // 금속컵 열량계에 넣기
     placeCupInBeaker();
@@ -765,7 +842,7 @@ function placeCupInBeaker() {
   state.cupInBeaker = true;
   state.step = 4;
   updateSteps(4);
-  setStatus('<strong>온도 센서 2개</strong>를 드래그하여 열량계에 넣으세요.');
+  setStatus('<strong>온도 센서 2개</strong>를 끌어서 열량계에 넣으세요.');
 }
 
 function addSensor(sensorId) {
@@ -1006,7 +1083,7 @@ function resetAll() {
   tempColdEl.textContent = '--';
 
   updateSteps(1);
-  setStatus('<strong>찬물(200mL)</strong>을 드래그하여 열량계에 넣으세요.');
+  setStatus('<strong>찬물(200mL)</strong>을 끌어서 열량계에 넣으세요.');
   drawGraph();
 }
 
