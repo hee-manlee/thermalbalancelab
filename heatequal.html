@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>열평형 실험</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nanum Gothic', sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    background: #16213e;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 2px solid #0f3460;
+  }
+
+  header h1 {
+    font-size: 1.3rem;
+    color: #e94560;
+    font-weight: bold;
+  }
+
+  header span {
+    font-size: 0.85rem;
+    color: #aaa;
+  }
+
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  /* ── 왼쪽: 실험실 ── */
+  .lab-panel {
+    flex: 1.2;
+    background: #f5f0e8;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lab-title {
+    background: #e8dcc8;
+    color: #555;
+    font-size: 0.8rem;
+    padding: 6px 16px;
+    border-bottom: 1px solid #ccc;
+    font-weight: bold;
+  }
+
+  /* 준비물 선반 */
+  .shelf {
+    background: #d4c5a9;
+    border-bottom: 4px solid #b8a88a;
+    padding: 14px 24px;
+    display: flex;
+    align-items: flex-end;
+    gap: 28px;
+    min-height: 120px;
+    position: relative;
+  }
+
+  .shelf::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0; right: 0;
+    height: 4px;
+    background: #a09070;
+  }
+
+  /* 실험대 */
+  .bench {
+    flex: 1;
+    background: #c8b89a;
+    border-top: 6px solid #b0a080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    position: relative;
+  }
+
+  .bench-label {
+    position: absolute;
+    top: 8px; left: 16px;
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  /* 아이템 공통 */
+  .item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.15s;
+  }
+
+  .item:active { cursor: grabbing; }
+  .item:hover { transform: translateY(-4px); }
+
+  .item-label {
+    font-size: 0.72rem;
+    color: #555;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* 찬물병 */
+  .cold-water-bottle {
+    width: 36px;
+    height: 70px;
+    background: linear-gradient(180deg, #a8d8ea 0%, #72b8d8 100%);
+    border-radius: 6px 6px 4px 4px;
+    border: 2px solid #5a9ab8;
+    position: relative;
+  }
+  .cold-water-bottle::before {
+    content: '';
+    position: absolute;
+    top: -10px; left: 50%;
+    transform: translateX(-50%);
+    width: 14px; height: 10px;
+    background: #5a9ab8;
+    border-radius: 3px 3px 0 0;
+  }
+  .cold-water-bottle::after {
+    content: '찬물\A200mL';
+    white-space: pre;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.6rem;
+    color: #1a5a78;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  /* 뜨거운 물병 */
+  .hot-water-bottle {
+    width: 36px;
+    height: 70px;
+    background: linear-gradient(180deg, #ffccaa 0%, #e87040 100%);
+    border-radius: 6px 6px 4px 4px;
+    border: 2px solid #c05020;
+    position: relative;
+  }
+  .hot-water-bottle::before {
+    content: '';
+    position: absolute;
+    top: -10px; left: 50%;
+    transform: translateX(-50%);
+    width: 14px; height: 10px;
+    background: #c05020;
+    border-radius: 3px 3px 0 0;
+  }
+  .hot-water-bottle::after {
+    content: '뜨거운\A물 100mL';
+    white-space: pre;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.6rem;
+    color: #5a1000;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  /* 센서 */
+  .sensor {
+    width: 28px;
+    height: 60px;
+    background: linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 100%);
+    border-radius: 4px;
+    border: 2px solid #aaa;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 6px;
+  }
+  .sensor::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px; height: 12px;
+    background: #888;
+  }
+  .sensor-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #e94560;
+  }
+
+  /* 열량계 */
+  .beaker-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+  }
+
+  .beaker {
+    width: 135px;
+    height: 110px;
+    background: rgba(180, 220, 255, 0.15);
+    border: 3px solid #aaccee;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%);
+  }
+
+  .beaker-spout {
+    width: 156px;
+    height: 8px;
+    background: transparent;
+    border: 3px solid #aaccee;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+  }
+  .beaker-spout::before {
+    content: '';
+    position: absolute;
+    right: -10px; top: -2px;
+    width: 14px; height: 10px;
+    border: 3px solid #aaccee;
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .water-cold {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 0%;
+    background: linear-gradient(180deg, rgba(100,180,255,0.5) 0%, rgba(60,140,220,0.7) 100%);
+    transition: height 1s ease;
+    border-radius: 0 0 10px 10px;
+  }
+
+  .beaker-label-wrap {
+    font-size: 0.72rem;
+    color: #444;
+    text-align: center;
+  }
+
+  /* 금속컵 */
+  .metal-cup-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .metal-cup {
+    width: 64px;
+    height: 80px;
+    background: linear-gradient(180deg, #e0e0e0 0%, #b0b0b0 100%);
+    border: 3px solid #999;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%);
+  }
+
+  .metal-cup-rim {
+    width: 72px;
+    height: 8px;
+    background: linear-gradient(180deg, #ccc 0%, #aaa 100%);
+    border-radius: 4px 4px 0 0;
+    border: 2px solid #999;
+    border-bottom: none;
+  }
+
+  .water-hot {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 0%;
+    background: linear-gradient(180deg, rgba(255,140,60,0.5) 0%, rgba(220,80,20,0.7) 100%);
+    transition: height 1s ease;
+    border-radius: 0 0 8px 8px;
+  }
+
+  /* 드롭 하이라이트 */
+  .drop-target {
+    outline: 3px dashed #e94560;
+    outline-offset: 4px;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { outline-color: #e94560; }
+    50% { outline-color: #ff8c42; }
+  }
+
+  /* ── 오른쪽: 그래프 패널 ── */
+  .graph-panel {
+    flex: 1;
+    background: #0d1b2a;
+    display: flex;
+    flex-direction: column;
+    border-left: 2px solid #0f3460;
+  }
+
+  .graph-title {
+    background: #16213e;
+    color: #aaa;
+    font-size: 0.8rem;
+    padding: 6px 16px;
+    border-bottom: 1px solid #0f3460;
+    font-weight: bold;
+  }
+
+  .graph-area {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  canvas#graph {
+    width: 100%;
+    flex: 1;
+    border-radius: 8px;
+    background: #0a1628;
+  }
+
+  /* 온도 표시 */
+  .temp-display {
+    display: flex;
+    gap: 16px;
+  }
+
+  .temp-card {
+    flex: 1;
+    background: #16213e;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border-left: 4px solid #ccc;
+  }
+
+  .temp-card.cold { border-color: #72b8d8; }
+  .temp-card.hot  { border-color: #e87040; }
+
+  .temp-card .label {
+    font-size: 0.72rem;
+    color: #aaa;
+    margin-bottom: 4px;
+  }
+
+  .temp-card .value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #eee;
+  }
+
+  .temp-card .unit {
+    font-size: 0.85rem;
+    color: #aaa;
+  }
+
+  /* ── 하단: 상태바 ── */
+  .status-bar {
+    background: #16213e;
+    border-top: 2px solid #0f3460;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .step-indicators {
+    display: flex;
+    gap: 8px;
+  }
+
+  .step {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #0f3460;
+    border: 2px solid #0f3460;
+    color: #666;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: all 0.3s;
+  }
+
+  .step.active {
+    background: #e94560;
+    border-color: #e94560;
+    color: white;
+  }
+
+  .step.done {
+    background: #2a9d5c;
+    border-color: #2a9d5c;
+    color: white;
+  }
+
+  .status-msg {
+    font-size: 0.88rem;
+    color: #ccc;
+    flex: 1;
+  }
+
+  .status-msg strong {
+    color: #e94560;
+  }
+
+  .btn-reset {
+    background: #0f3460;
+    color: #aaa;
+    border: 1px solid #1a4a80;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-reset:hover {
+    background: #1a4a80;
+    color: #eee;
+  }
+
+  /* 드래그 중 고스트 */
+  .dragging-ghost {
+    position: fixed;
+    pointer-events: none;
+    opacity: 0.7;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+  }
+
+  /* 센서 in-beaker */
+  .sensor-in {
+    position: absolute;
+    top: 10px;
+    width: 6px;
+    height: 40px;
+    background: #ccc;
+    border-radius: 3px;
+    border: 1px solid #aaa;
+  }
+  .sensor-in.left { left: 18px; }
+  .sensor-in.right { right: 18px; }
+  .sensor-in-dot {
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #e94560;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔬 열평형 실험</h1>
+  <span>중학교 1학년 과학 · 온도와 열</span>
+</header>
+
+<div class="main">
+
+  <!-- ── 실험실 패널 ── -->
+  <div class="lab-panel">
+    <div class="lab-title">실험 준비물 (선반)</div>
+
+    <!-- 준비물 선반 -->
+    <div class="shelf" id="shelf">
+
+      <!-- 찬물병 -->
+      <div class="item" id="cold-water-item" draggable="true">
+        <div class="cold-water-bottle"></div>
+        <div class="item-label">찬물 200mL</div>
+      </div>
+
+      <!-- 뜨거운 물병 -->
+      <div class="item" id="hot-water-item" draggable="true">
+        <div class="hot-water-bottle"></div>
+        <div class="item-label">뜨거운 물 100mL</div>
+      </div>
+
+      <!-- 센서 1 -->
+      <div class="item" id="sensor1-item" draggable="true">
+        <div class="sensor"><div class="sensor-dot"></div></div>
+        <div class="item-label">온도 센서 1</div>
+      </div>
+
+      <!-- 센서 2 -->
+      <div class="item" id="sensor2-item" draggable="true">
+        <div class="sensor"><div class="sensor-dot"></div></div>
+        <div class="item-label">온도 센서 2</div>
+      </div>
+
+    </div>
+
+    <!-- 실험대 -->
+    <div class="bench" id="bench">
+      <div class="bench-label">실험대</div>
+
+      <!-- 열량계 -->
+      <div class="beaker-wrap" id="beaker-wrap">
+        <div class="beaker-spout"></div>
+        <div class="beaker" id="beaker-drop">
+          <div class="water-cold" id="cold-water-level"></div>
+          <!-- 센서들은 JS로 추가 -->
+        </div>
+        <div class="beaker-label-wrap">열량계 (250mL)</div>
+      </div>
+
+      <!-- 금속컵 -->
+      <div class="metal-cup-wrap" id="metal-cup-wrap">
+        <div class="metal-cup-rim"></div>
+        <div class="metal-cup" id="metal-cup">
+          <div class="water-hot" id="hot-water-level"></div>
+        </div>
+        <div class="beaker-label-wrap">금속 컵</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 그래프 패널 ── -->
+  <div class="graph-panel">
+    <div class="graph-title">온도-시간 그래프</div>
+    <div class="graph-area">
+      <canvas id="graph"></canvas>
+      <div class="temp-display">
+        <div class="temp-card cold">
+          <div class="label">🧊 열량계 (찬물)</div>
+          <div><span class="value" id="temp-cold">--</span><span class="unit"> °C</span></div>
+        </div>
+        <div class="temp-card hot">
+          <div class="label">🔥 금속컵 (뜨거운 물)</div>
+          <div><span class="value" id="temp-hot">--</span><span class="unit"> °C</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── 상태바 ── -->
+<div class="status-bar">
+  <div class="step-indicators">
+    <div class="step active" id="step1">1</div>
+    <div class="step" id="step2">2</div>
+    <div class="step" id="step3">3</div>
+    <div class="step" id="step4">4</div>
+    <div class="step" id="step5">5</div>
+  </div>
+  <div class="status-msg" id="status-msg">
+    <strong>찬물(200mL)</strong>을 드래그하여 열량계에 넣으세요.
+  </div>
+  <button class="btn-reset" id="btn-reset">↺ 다시 시작</button>
+</div>
+
+<script>
+// ── 실험 상태 ──
+const state = {
+  step: 1,          // 현재 단계 (1~5)
+  coldAdded: false,
+  hotAdded: false,
+  cupInBeaker: false,
+  sensorsAdded: 0,
+  graphRunning: false,
+  time: 0,
+  tempCold: 15,
+  tempHot: 80,
+  dataHot: [],
+  dataCold: [],
+};
+
+const TEMP_COLD_INIT = 15;
+const TEMP_HOT_INIT  = 80;
+const TEMP_EQ        = 36.7;  // 열평형 온도
+
+// ── DOM 참조 ──
+const statusMsg     = document.getElementById('status-msg');
+const tempColdEl    = document.getElementById('temp-cold');
+const tempHotEl     = document.getElementById('temp-hot');
+const coldLevel     = document.getElementById('cold-water-level');
+const hotLevel      = document.getElementById('hot-water-level');
+const beakerDrop    = document.getElementById('beaker-drop');
+const beakerWrap    = document.getElementById('beaker-wrap');
+const metalCup      = document.getElementById('metal-cup');
+const metalCupWrap  = document.getElementById('metal-cup-wrap');
+const coldWaterItem = document.getElementById('cold-water-item');
+const hotWaterItem  = document.getElementById('hot-water-item');
+const sensor1Item   = document.getElementById('sensor1-item');
+const sensor2Item   = document.getElementById('sensor2-item');
+const canvas        = document.getElementById('graph');
+const ctx           = canvas.getContext('2d');
+
+// ── 단계 표시 업데이트 ──
+function updateSteps(current) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById(`step${i}`);
+    el.className = 'step';
+    if (i < current)  el.classList.add('done');
+    if (i === current) el.classList.add('active');
+  }
+}
+
+function setStatus(html) {
+  statusMsg.innerHTML = html;
+}
+
+// ── 드래그 & 드롭 ──
+let dragging = null;
+
+function makeDraggable(el, id) {
+  el.addEventListener('dragstart', e => {
+    dragging = id;
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  el.addEventListener('dragend', () => { dragging = null; });
+}
+
+makeDraggable(coldWaterItem, 'cold-water');
+makeDraggable(hotWaterItem,  'hot-water');
+makeDraggable(sensor1Item,   'sensor1');
+makeDraggable(sensor2Item,   'sensor2');
+makeDraggable(metalCupWrap,  'metal-cup');
+
+// 열량계 드롭존
+beakerDrop.addEventListener('dragover', e => {
+  if (isValidBeakerDrop()) {
+    e.preventDefault();
+    beakerDrop.classList.add('drop-target');
+  }
+});
+beakerDrop.addEventListener('dragleave', () => {
+  beakerDrop.classList.remove('drop-target');
+});
+beakerDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  beakerDrop.classList.remove('drop-target');
+  handleBeakerDrop();
+});
+
+// 금속컵 드롭존 (뜨거운 물 → 금속컵)
+metalCup.addEventListener('dragover', e => {
+  if (state.step === 2 && dragging === 'hot-water') {
+    e.preventDefault();
+    metalCup.classList.add('drop-target');
+  }
+});
+metalCup.addEventListener('dragleave', () => {
+  metalCup.classList.remove('drop-target');
+});
+metalCup.addEventListener('drop', e => {
+  e.preventDefault();
+  metalCup.classList.remove('drop-target');
+  if (state.step === 2 && dragging === 'hot-water') {
+    hotLevel.style.height = '60%';
+    hotWaterItem.style.opacity = '0.3';
+    hotWaterItem.draggable = false;
+    state.hotAdded = true;
+    state.step = 3;
+    updateSteps(3);
+    setStatus('<strong>금속컵</strong>을 드래그하여 열량계 안에 넣으세요.');
+  }
+});
+
+function isValidBeakerDrop() {
+  if (state.step === 1 && dragging === 'cold-water') return true;
+  if (state.step === 3 && dragging === 'metal-cup')  return true;
+  if (state.step === 4 && (dragging === 'sensor1' || dragging === 'sensor2')) return true;
+  return false;
+}
+
+function handleBeakerDrop() {
+  if (state.step === 1 && dragging === 'cold-water') {
+    coldLevel.style.height = '65%';
+    coldWaterItem.style.opacity = '0.3';
+    coldWaterItem.draggable = false;
+    state.coldAdded = true;
+    state.step = 2;
+    updateSteps(2);
+    setStatus('<strong>뜨거운 물(100mL)</strong>을 드래그하여 금속컵에 넣으세요.');
+  } else if (state.step === 3 && dragging === 'metal-cup') {
+    // 금속컵 열량계에 넣기
+    placeCupInBeaker();
+  } else if (state.step === 4 && (dragging === 'sensor1' || dragging === 'sensor2')) {
+    // 센서 넣기
+    addSensor(dragging);
+  }
+}
+
+function placeCupInBeaker() {
+  metalCupWrap.style.visibility = 'hidden';
+  metalCupWrap.draggable = false;
+
+  // ── 몸통: beakerDrop 안에 배치 (overflow:hidden에 의해 클리핑됨) ──
+  // 찬물 수면: 65% × 110px = 71.5px (beaker 하단 기준)
+  // 몸통 높이 50px → 수면에서 아래로: bottom = 71.5 - 50 = 21.5px ≈ 22px
+  const miniBody = document.createElement('div');
+  miniBody.id = 'mini-cup-body';
+  miniBody.style.cssText = `
+    position: absolute;
+    bottom: 22px; left: 50%; transform: translateX(-50%);
+    width: 50px; height: 50px;
+    background: linear-gradient(180deg, #d8d8d8 0%, #b0b0b0 100%);
+    border: 2px solid #999; border-top: none;
+    border-radius: 0 0 6px 6px;
+    clip-path: polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%);
+    overflow: hidden;
+    pointer-events: none;
+  `;
+  const miniHot = document.createElement('div');
+  miniHot.style.cssText = `
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 65%; background: rgba(220,80,20,0.75);
+    border-radius: 0 0 5px 5px;
+  `;
+  miniBody.appendChild(miniHot);
+  beakerDrop.appendChild(miniBody);
+
+  // ── 테두리(rim): beakerWrap 기준으로 수면 바로 위에 배치 ──
+  // 수면(beaker-wrap 하단 기준): label(16px) + gap(6px) + 71.5px ≈ 94px
+  const miniRim = document.createElement('div');
+  miniRim.id = 'mini-cup-rim';
+  miniRim.style.cssText = `
+    position: absolute;
+    bottom: 94px; left: 50%; transform: translateX(-50%);
+    width: 58px; height: 8px;
+    background: linear-gradient(180deg, #d0d0d0 0%, #aaa 100%);
+    border-radius: 3px 3px 0 0;
+    border: 2px solid #999; border-bottom: none;
+    pointer-events: none;
+  `;
+  beakerWrap.appendChild(miniRim);
+
+  state.cupInBeaker = true;
+  state.step = 4;
+  updateSteps(4);
+  setStatus('<strong>온도 센서 2개</strong>를 드래그하여 열량계에 넣으세요.');
+}
+
+function addSensor(sensorId) {
+  const el = sensorId === 'sensor1' ? sensor1Item : sensor2Item;
+  el.style.opacity = '0.3';
+  el.draggable = false;
+  state.sensorsAdded++;
+
+  const sensorEl = document.createElement('div');
+  const dot = document.createElement('div');
+  dot.className = 'sensor-in-dot';
+  sensorEl.appendChild(dot);
+
+  if (sensorId === 'sensor1') {
+    // 센서1: 열량계 찬물 안 (왼쪽)
+    sensorEl.className = 'sensor-in left';
+    beakerDrop.appendChild(sensorEl);
+  } else {
+    // 센서2: 금속컵 내부 (뜨거운 물 안, 중앙)
+    sensorEl.className = 'sensor-in';
+    sensorEl.style.cssText = `
+      position: absolute;
+      top: 2px; left: 50%; transform: translateX(-50%);
+      width: 6px; height: 38px;
+      background: #ccc; border-radius: 3px; border: 1px solid #aaa;
+      pointer-events: none;
+    `;
+    dot.style.background = '#e94560';
+    const miniBody = document.getElementById('mini-cup-body');
+    if (miniBody) miniBody.appendChild(sensorEl);
+  }
+
+  if (state.sensorsAdded === 1) {
+    setStatus('온도 센서 1개 삽입 완료. 나머지 <strong>온도 센서</strong>도 넣으세요.');
+  } else {
+    state.step = 5;
+    updateSteps(5);
+    setStatus('모든 준비 완료! 🌡️ 시간에 따른 <strong>온도 변화</strong>를 관찰하세요.');
+    startGraph();
+  }
+}
+
+// ── 그래프 ──
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width - 32;
+  canvas.height = Math.max(160, rect.height - 32 - 80 - 12);
+}
+
+window.addEventListener('resize', () => { resizeCanvas(); drawGraph(); });
+resizeCanvas();
+
+function drawGraph() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const PAD = { top: 20, right: 20, bottom: 40, left: 50 };
+  const gW = W - PAD.left - PAD.right;
+  const gH = H - PAD.top  - PAD.bottom;
+
+  // 배경
+  ctx.fillStyle = '#0a1628';
+  ctx.fillRect(0, 0, W, H);
+
+  // 격자
+  ctx.strokeStyle = '#1a3050';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const y = PAD.top + (gH / 10) * i;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + gW, y); ctx.stroke();
+  }
+  for (let i = 0; i <= 10; i++) {
+    const x = PAD.left + (gW / 10) * i;
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + gH); ctx.stroke();
+  }
+
+  // 축
+  ctx.strokeStyle = '#4a6a90';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, PAD.top);
+  ctx.lineTo(PAD.left, PAD.top + gH);
+  ctx.lineTo(PAD.left + gW, PAD.top + gH);
+  ctx.stroke();
+
+  // 축 레이블
+  ctx.fillStyle = '#6a8aaa';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('시간 (초)', PAD.left + gW / 2, H - 4);
+  ctx.save();
+  ctx.translate(14, PAD.top + gH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('온도 (°C)', 0, 0);
+  ctx.restore();
+
+  // Y축 눈금 (0~100)
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#6a8aaa';
+  for (let t = 0; t <= 100; t += 20) {
+    const y = PAD.top + gH - (t / 100) * gH;
+    ctx.fillText(t, PAD.left - 6, y + 4);
+  }
+
+  // 열평형 온도 점선
+  if (state.graphRunning || state.dataHot.length > 0) {
+    const eqY = PAD.top + gH - (TEMP_EQ / 100) * gH;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = '#3a7a5a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, eqY);
+    ctx.lineTo(PAD.left + gW, eqY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#3a9a6a';
+    ctx.textAlign = 'left';
+    ctx.font = '10px sans-serif';
+    ctx.fillText(`열평형 ${TEMP_EQ}°C`, PAD.left + 4, eqY - 4);
+  }
+
+  const maxT = 120; // 초
+
+  // 데이터 그리기 공통 함수
+  function plotLine(data, color) {
+    if (data.length < 2) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    data.forEach((pt, i) => {
+      const x = PAD.left + (pt.t / maxT) * gW;
+      const y = PAD.top + gH - (pt.v / 100) * gH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // 끝점 점
+    if (data.length > 0) {
+      const last = data[data.length - 1];
+      const x = PAD.left + (last.t / maxT) * gW;
+      const y = PAD.top + gH - (last.v / 100) * gH;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  plotLine(state.dataHot,  '#e87040');
+  plotLine(state.dataCold, '#72b8d8');
+
+  // 범례
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'left';
+  [['#e87040','금속컵 (뜨거운 물)'], ['#72b8d8','열량계 (찬물)']].forEach(([c, label], i) => {
+    const lx = PAD.left + 8, ly = PAD.top + 12 + i * 18;
+    ctx.fillStyle = c;
+    ctx.fillRect(lx, ly - 8, 20, 3);
+    ctx.fillStyle = '#ccc';
+    ctx.fillText(label, lx + 26, ly - 1);
+  });
+}
+
+let graphTimer = null;
+
+function startGraph() {
+  state.graphRunning = true;
+  state.time = 0;
+  state.tempCold = TEMP_COLD_INIT;
+  state.tempHot  = TEMP_HOT_INIT;
+  state.dataHot  = [];
+  state.dataCold = [];
+
+  graphTimer = setInterval(() => {
+    state.time += 1;
+
+    // 열평형 곡선: 지수 접근
+    const k = 0.035;
+    state.tempHot  = TEMP_EQ + (TEMP_HOT_INIT  - TEMP_EQ) * Math.exp(-k * state.time);
+    state.tempCold = TEMP_EQ - (TEMP_EQ - TEMP_COLD_INIT) * Math.exp(-k * state.time);
+
+    // 약간의 노이즈
+    const noise = () => (Math.random() - 0.5) * 0.3;
+    const tH = +(state.tempHot  + noise()).toFixed(1);
+    const tC = +(state.tempCold + noise()).toFixed(1);
+
+    state.dataHot.push({ t: state.time, v: tH });
+    state.dataCold.push({ t: state.time, v: tC });
+
+    tempHotEl.textContent  = tH.toFixed(1);
+    tempColdEl.textContent = tC.toFixed(1);
+
+    drawGraph();
+
+    if (state.time >= 120) {
+      clearInterval(graphTimer);
+      state.graphRunning = false;
+      setStatus('실험 완료! 🎉 찬물과 뜨거운 물이 <strong>열평형</strong>에 도달했습니다. (약 ' + TEMP_EQ + '°C)');
+    }
+  }, 200); // 200ms마다 (실제 1초 = 0.2초로 가속)
+}
+
+// ── 초기화 ──
+document.getElementById('btn-reset').addEventListener('click', resetAll);
+
+function resetAll() {
+  if (graphTimer) clearInterval(graphTimer);
+  Object.assign(state, {
+    step: 1, coldAdded: false, hotAdded: false,
+    cupInBeaker: false, sensorsAdded: 0,
+    graphRunning: false, time: 0,
+    tempCold: TEMP_COLD_INIT, tempHot: TEMP_HOT_INIT,
+    dataHot: [], dataCold: [],
+  });
+
+  coldLevel.style.height = '0%';
+  hotLevel.style.height  = '0%';
+  coldWaterItem.style.opacity = '1';
+  coldWaterItem.draggable = true;
+  hotWaterItem.style.opacity = '1';
+  hotWaterItem.draggable = true;
+  sensor1Item.style.opacity = '1';
+  sensor1Item.draggable = true;
+  sensor2Item.style.opacity = '1';
+  sensor2Item.draggable = true;
+  metalCupWrap.style.visibility = 'visible';
+  metalCupWrap.draggable = true;
+
+  // 열량계 내 추가 요소 제거
+  beakerDrop.querySelectorAll('.sensor-in').forEach(el => el.remove());
+  const miniBody = document.getElementById('mini-cup-body');
+  if (miniBody) miniBody.remove();
+  const miniRim = document.getElementById('mini-cup-rim');
+  if (miniRim) miniRim.remove();
+
+  tempHotEl.textContent  = '--';
+  tempColdEl.textContent = '--';
+
+  updateSteps(1);
+  setStatus('<strong>찬물(200mL)</strong>을 드래그하여 열량계에 넣으세요.');
+  drawGraph();
+}
+
+// 초기 그래프 렌더
+drawGraph();
+</script>
+</body>
+</html>
