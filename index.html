@@ -539,7 +539,7 @@
       </div>
 
       <!-- 금속컵 -->
-      <div class="metal-cup-wrap" id="metal-cup-wrap">
+      <div class="metal-cup-wrap" id="metal-cup-wrap" draggable="true">
         <div class="metal-cup-rim"></div>
         <div class="metal-cup" id="metal-cup">
           <div class="water-hot" id="hot-water-level"></div>
@@ -726,18 +726,23 @@ addTouchDrag(sensor1Item,   'sensor1');
 addTouchDrag(sensor2Item,   'sensor2');
 addTouchDrag(metalCupWrap,  'metal-cup');
 
-// 열량계 드롭존
-beakerDrop.addEventListener('dragover', e => {
+// 열량계 드롭존 (beakerWrap 전체를 drop zone으로 확장)
+beakerWrap.addEventListener('dragover', e => {
   if (isValidBeakerDrop()) {
     e.preventDefault();
+    beakerWrap.classList.add('drop-target');
     beakerDrop.classList.add('drop-target');
   }
 });
-beakerDrop.addEventListener('dragleave', () => {
-  beakerDrop.classList.remove('drop-target');
+beakerWrap.addEventListener('dragleave', e => {
+  if (!beakerWrap.contains(e.relatedTarget)) {
+    beakerWrap.classList.remove('drop-target');
+    beakerDrop.classList.remove('drop-target');
+  }
 });
-beakerDrop.addEventListener('drop', e => {
+beakerWrap.addEventListener('drop', e => {
   e.preventDefault();
+  beakerWrap.classList.remove('drop-target');
   beakerDrop.classList.remove('drop-target');
   handleBeakerDrop();
 });
