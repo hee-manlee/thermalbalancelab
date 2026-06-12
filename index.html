@@ -1026,12 +1026,19 @@ function startGraph() {
     state.time += 1;
 
     // 열평형 곡선: 지수 접근
-    const k = 0.035;
+    const k = 0.045;
     state.tempHot  = TEMP_EQ + (TEMP_HOT_INIT  - TEMP_EQ) * Math.exp(-k * state.time);
     state.tempCold = TEMP_EQ - (TEMP_EQ - TEMP_COLD_INIT) * Math.exp(-k * state.time);
 
-    // 약간의 노이즈
-    const noise = () => (Math.random() - 0.5) * 0.3;
+    // 두 온도가 평형 온도에 충분히 가까우면 스냅
+    const converged = Math.abs(state.tempHot - TEMP_EQ) < 0.5 && Math.abs(state.tempCold - TEMP_EQ) < 0.5;
+    if (converged) {
+      state.tempHot  = TEMP_EQ;
+      state.tempCold = TEMP_EQ;
+    }
+
+    // 수렴 전에만 노이즈 적용
+    const noise = () => converged ? 0 : (Math.random() - 0.5) * 0.3;
     const tH = +(state.tempHot  + noise()).toFixed(1);
     const tC = +(state.tempCold + noise()).toFixed(1);
 
